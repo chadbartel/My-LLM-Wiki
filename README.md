@@ -10,6 +10,17 @@ A personal knowledge management system built on Karpathy's LLM wiki pattern, ada
 
 This is your **personal knowledge base** covering:
 
+### Hybrid knowledge lifecycle
+
+This repository now follows a hybrid model inspired by the second-brain workflow:
+
+1. **Raw sources** live in `raw/` and are treated as immutable input material.
+2. **Wiki pages** in `Wiki/` are curated, linked, and synthesized knowledge.
+3. **Generated outputs** live in `output/` for reports, summaries, or exports.
+4. **Agent workflows** are rule-driven and wiki-first, so queries look in the wiki before code or memory.
+
+This preserves the workspace portfolio model while adding a cleaner source-to-knowledge pipeline.
+
 - **20+ workspace projects** (TTRPG, AI/LLM, AWS Infrastructure, Utilities & Learning)
 - **68 wiki pages** (26 entity pages + 25 concept pages + 7 synthesis/navigation pages + 10 supporting pages)
 - **Automated monitoring** (project scanner + change detector + GitHub Actions)

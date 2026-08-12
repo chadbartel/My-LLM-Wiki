@@ -50,6 +50,17 @@ python3.12 /mnt/c/Users/Chaddle/Documents/ObsidianVault/scripts/sync-wiki.py --v
 
 ## LLM Wiki Architecture
 
+### Hybrid Knowledge Lifecycle
+
+This repo now follows a hybrid model combining the workspace portfolio strategy with the second-brain workflow:
+
+1. **Raw sources** — immutable inputs stored in `raw/`
+2. **Wiki pages** — synthesized, linked, and curated in `Wiki/`
+3. **Output artifacts** — reports and exports in `output/`
+4. **Git discipline** — all updates happen from a fresh `main` branch and a PR-backed review cycle
+
+This keeps the knowledge graph useful for project context while adding a cleaner source-to-wiki pipeline.
+
 ### Purpose
 
 The LLM Wiki is a persistent, interlinked knowledge base built incrementally from raw sources. It uses the pattern from [Karpathy's llm-wiki](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) adapted for Obsidian.
@@ -75,6 +86,20 @@ The LLM Wiki is a persistent, interlinked knowledge base built incrementally fro
 ---
 
 ## Wiki Structure & Conventions
+
+### Git workflow rule for any repo change
+
+Before editing this project, always follow this sequence exactly:
+
+1. `git pull --prune origin main`
+2. Create a new branch from `main`
+3. Make the change on that branch
+4. Commit the change
+5. Push the branch
+6. Open a pull request against `main`
+7. Include the PR link in the final response
+
+This is mandatory for every change to My-LLM-Wiki.
 
 ### Directory Layout
 

@@ -4,6 +4,19 @@ Automated monitoring and wiki updates. Keeps your workspace projects synchronize
 
 ## Quick Start
 
+### Hybrid workflow
+
+Use the repo in three layers:
+
+- `raw/` — source material, links, notes, clippings, and downloaded artifacts
+- `Wiki/` — generated knowledge base and cross-linked project context
+- `output/` — generated reports, action checklists, or export artifacts
+
+### Run wiki linting
+```bash
+python3.12 scripts/wiki-lint.py
+```
+
 ### View what would change (safe to run anytime)
 ```bash
 cd /mnt/c/Users/Chaddle/Documents/ObsidianVault
