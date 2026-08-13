@@ -572,11 +572,12 @@ class WikiSyncManager:
                     "dependencies": p.dependencies,
                     "last_modified": p.last_modified,
                     "has_tests": p.has_tests,
+                    "path": str(p.path),
                 }
                 for name, p in projects.items()
             },
         }
-        self.state_file.write_text(json.dumps(state, indent=2))
+        self.state_file.write_text(json.dumps(state, indent=2, default=str))
 
     def _update_log(self, changes: dict[str, Any], summary: dict[str, Any]) -> None:
         """Update wiki log with sync results."""
