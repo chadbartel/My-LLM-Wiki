@@ -114,8 +114,8 @@ class ProjectScanner:
         pyproject_exists = (project_path / "pyproject.toml").exists()
         readme_exists = (project_path / "README.md").exists()
         dockerfile_exists = (project_path / "Dockerfile").exists()
-        has_tests = (project_path / "tests").exists() or (
-            project_path / "test" / "*.py"
+        has_tests = (project_path / "tests").exists() or any(
+            project_path.glob("test/*.py")
         )
 
         # Parse pyproject.toml for dependencies
