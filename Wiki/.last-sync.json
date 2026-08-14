@@ -1,15 +1,15 @@
 {
-  "last_sync": "2026-08-12T19:26:18.885791",
+  "last_sync": "2026-08-12T23:18:16.192027",
   "projects": {
     "Homelab-Ansible": {
       "name": "Homelab-Ansible",
       "language": "Python",
       "status": "in-progress",
       "description": "A modular Ansible collection for deploying and managing homelab infrastructure with Docker, Docker Swarm, Portainer, and various services. Built with reusable roles following Ansible Galaxy best pract",
-      "file_count": 11808,
+      "file_count": 11861,
       "dependencies": {},
-      "last_modified": "2026-08-12T19:20:11.169732",
-      "has_tests": "/home/thatsmidnight/projects/Homelab-Ansible/test/*.py",
+      "last_modified": "2026-08-12T23:10:58.500597",
+      "has_tests": false,
       "path": "/home/thatsmidnight/projects/Homelab-Ansible"
     }
   }
