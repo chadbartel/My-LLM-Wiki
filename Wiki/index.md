@@ -140,7 +140,7 @@ Projects, tools, people, organizations. Your workspace entities.
 | chadbarteldotcom | [[Wiki/entities/chadbarteldotcom]] | AWS | active | 2026-08-07 |
 | thatsmidnightdotcom | [[Wiki/entities/thatsmidnightdotcom]] | AWS | active | 2026-08-07 |
 | Cartographers-Cloud-Kit | [[Wiki/entities/Cartographers-Cloud-Kit]] | AWS | in-progress | 2026-08-07 |
-| Homelab-Ansible | [[Wiki/entities/Homelab-Ansible]] | AWS | active | 2026-08-07 |
+| Homelab-Ansible | [[Wiki/entities/Homelab-Ansible]] | AWS | active | 2026-08-14 |
 ### Utilities & Learning Project Entities
 
 | Project | File | Ecosystem | Focus | Status | Updated |
