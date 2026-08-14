@@ -1,7 +1,7 @@
 ---
 type: entity
 date_created: 2026-08-07
-date_updated: 2026-08-12
+date_updated: 2026-08-14
 tags:
   - wiki/entity
   - project/infrastructure
@@ -10,16 +10,33 @@ tags:
   - tech/ansible
   - tech/docker
   - tech/nginx
-source_count: 1
+  - tech/tailscale
+source_count: 2
 ---
 
 # Homelab-Ansible
 
-Infrastructure-as-code automation for a single powerful monolith server (192.168.1.17, Ubuntu, AMD Ryzen 9 5900XT, NVIDIA RTX 2070 SUPER) using Ansible and Docker Compose. Orchestrates media server stack (Jellyfin, Pi-hole, OpenVPN, Tailscale) and application containers using modern Compose V2. Demonstrates local-first architecture with VRAM-conscious GPU acceleration.
+Infrastructure-as-code automation for a single powerful monolith server (192.168.1.17, Ubuntu, AMD Ryzen 9 5900XT, NVIDIA RTX 2070 SUPER) using Ansible and Docker Compose. Orchestrates a growing media/application stack (Jellyfin, Bazarr, Pi-hole, Ollama + Open WebUI, Dispatcharr, RetroArch, Audiobookshelf) plus native Tailscale VPN, all via modern Compose V2. Demonstrates local-first architecture with VRAM-conscious GPU acceleration.
 
 ## Purpose
 
-Declarative infrastructure automation for a home media server and services lab. Replace manual server configuration with reproducible Ansible playbooks that define 10+ services on a single Ubuntu host using Docker Compose.
+Declarative infrastructure automation for a home media server and services lab. Replace manual server configuration with reproducible Ansible playbooks that define 13+ roles / 10+ containerized services on a single Ubuntu host using Docker Compose.
+
+## Recent Changes (as of 2026-08-14)
+
+Since the last deep review (2026-08-07), the repo has grown substantially — recent PR history (`git log --oneline`) shows:
+
+- **#43 Monolith Docker hardening and subnet-routing updates** — bootstrap/deploy phase split, Tailscale subnet router hardening
+- **#42 Feat/audiobookshelf** — new `audiobookshelf` role (audiobook/ebook server)
+- **#41 fix/jellyiptvtuner**
+- **#40 Feat/retroarch** — new `retroarch` role (GPU-accelerated emulation via KasmVNC)
+- **#39 Feat/dispatcharr** — new `dispatcharr` role (IPTV/VOD platform, GPU transcoding)
+- **#38 Feat/ollama** — Ollama + Open WebUI local LLM stack added
+- **#37 Feat/bazarr** — Bazarr subtitle management added
+- **#36 Feat/tailscale** — native Tailscale role replacing the earlier Docker-based OpenVPN/Tailscale approach
+- **#35 Feat/monolith**, **#34 Fix/vpn idempotency**, **#33 Fix/npm restart**, **#32 Fix homelab**
+
+**Net effect:** OpenVPN is gone from the current architecture — VPN access is now handled entirely by the native **Tailscale** role (exit node + subnet router mode, `192.168.1.0/24` advertised). A `pihole_api` role was also added providing full Pi-hole REST API v6.0 coverage (80+ endpoints), largely to fix a DNS rate-limiting incident (see `docs/PIHOLE_RATE_LIMIT_INCIDENT.md`, referenced from README).
 
 ## Core Architecture
 
@@ -55,21 +72,24 @@ Host Storage
 - **Multi-Service Orchestration** — 10+ services on single host
 - **GPU Acceleration** — NVIDIA RTX 2070 SUPER via nvidia-container-toolkit
 - **Reverse Proxy** — Nginx Proxy Manager for domain-based routing
-- **DNS Management** — Pi-hole for LAN DNS + ad blocking
-- **VPN Access** — OpenVPN Access Server + Tailscale
-- **Media Server** — Jellyfin for home video streaming
-- **Monitoring** — Portainer for container management
-- **Data Preservation** — USB SSD mounting with nofail option
+- **DNS Management** — Pi-hole for LAN DNS + ad blocking, managed via native `pihole_config` role plus a full `pihole_api` role (Pi-hole REST API v6.0, 80+ endpoints)
+- **VPN Access** — Native Tailscale (exit node + subnet router mode); OpenVPN has been removed from the architecture
+- **Media Server** — Jellyfin (video), Bazarr (subtitles), Audiobookshelf (audiobooks/ebooks), Dispatcharr (IPTV/VOD), RetroArch (GPU-accelerated emulation via KasmVNC)
+- **Local LLM** — Ollama + Open WebUI stack for local model inference
+- **Monitoring** — Portainer for container management (no Prometheus/Grafana stack)
+- **Data Preservation** — USB SSD mounting with nofail option, tiered storage (NVMe for Docker data, USB SSDs for bulk media)
 
 ## Tech Stack
 
 - **Orchestration:** Ansible 2.10+
 - **Container Runtime:** Docker Engine (standalone, not Swarm)
 - **Compose:** Docker Compose V2 (space-separated command)
-- **Host OS:** Ubuntu 22.04 LTS
-- **Server IP:** 192.168.1.17
-- **GPU:** NVIDIA RTX 2070 SUPER (8GB VRAM)
-- **Python:** 3.12 (Ansible + custom modules)
+- **Host OS:** Ubuntu (NVIDIA driver 550 series referenced, Ubuntu 24.04-compatible)
+- **Server IP:** 192.168.1.17 ("monolith")
+- **GPU:** NVIDIA RTX 2070 SUPER (8GB VRAM) — used by Jellyfin, Dispatcharr, RetroArch
+- **Python:** 3.11 (venv at `/opt/homelab-ansible`) + custom Ansible modules
+- **VPN:** Native Tailscale (not Dockerized)
+- **Dynamic DNS:** DuckDNS (`chadbartel.duckdns.org`)
 - **Key Collections:** community.docker, community.general
 
 ## Architecture
@@ -104,7 +124,13 @@ homelab-ansible/
 │   ├── jellyfin_config/              # Media server tuning
 │   │   └── tasks/
 │   │       └── enable_gpu_transcoding.yml
-│   └── [other roles...]
+│   ├── pihole_api/                   # Pi-hole REST API v6.0 client (80+ endpoints, rate-limit fixes)
+│   ├── tailscale/                    # Native Tailscale VPN (exit node + subnet router)
+│   ├── dispatcharr/                  # IPTV/VOD platform (GPU transcoding, modular web/db/redis/celery)
+│   ├── retroarch/                    # GPU-accelerated emulator frontend (KasmVNC web UI)
+│   ├── audiobookshelf/               # Audiobook/ebook server
+│   ├── jellyctl/                     # CLI wrapper role for jellyfin management
+│   └── koffan_config/                # Post-setup role for a grocery/koffan app (NFS backup optional)
 ├── group_vars/
 │   └── monolith.yml                  # Host-specific variables
 ├── host_vars/
@@ -136,9 +162,10 @@ homelab-ansible/
 - ✅ Docker Bridge networking for service-to-service traffic
 
 **All Services on One Host (192.168.1.17):**
-- Container-to-container via container names on bridge network
-- Host-mode containers for privileged operations (OpenVPN, Tailscale)
+- Container-to-container via container names on bridge network (`homelab-bridge`)
+- Host-mode containers for privileged operations (Tailscale runs natively on the host, not in a container)
 - GPU via nvidia-container-toolkit on host
+- Deployment is split into two explicit phases in `main.yml`: **bootstrap** (system prep, drivers, Tailscale, storage mounts — no containers started) and **deploy** (network creation, Portainer, Dispatcharr, Compose stacks via `tasks/deploy_stacks.yml`)
 
 ## Storage Architecture
 
@@ -172,7 +199,7 @@ proxy_hosts:
 
 **Host Network Services (Gateway IP Routing):**
 ```yaml
-# For services in host mode (OpenVPN, Tailscale)
+# For services in host mode (e.g. native Tailscale)
 proxy_hosts:
   - domain: vpn.chadbartel.com
     forward_host: 172.18.0.1            # Docker bridge gateway IP
@@ -238,6 +265,12 @@ services:
 - Result: Domain resolution fails or times out
 - Add to all three locations immediately
 
+**Pi-hole API Role (`pihole_api`):**
+- Full Pi-hole REST API v6.0 client (80+ endpoints): config, domains, clients, groups, stats, Teleporter export/import
+- Added specifically to fix a DNS rate-limiting incident — default `FTLCONF_dns_rateLimit` was too aggressive for the number of clients on the LAN
+- Current setting: `pihole_rate_limit_count: 2000` queries per `pihole_rate_limit_interval: 60` seconds (10x the Pi-hole default of ~200/60s)
+- Includes ready-made playbooks: `roles/pihole_api/examples/rate_limit_fix.yml` and `identify_rate_limit_source.yml`
+
 ## Deployment Model
 
 **Main Playbook:**
@@ -275,13 +308,20 @@ ansible-playbook main.yml -i inventory.yml
 
 | Service | Purpose | Role | GPU | Network |
 |---------|---------|------|-----|---------|
-| Jellyfin | Media streaming | jellyfin_config | ✅ | bridge |
-| Pi-hole | DNS + ad-blocking | pihole_config | ❌ | bridge |
-| OpenVPN | VPN access | (custom) | ❌ | host |
-| Tailscale | Mesh VPN | (custom) | ❌ | host |
-| Nginx Proxy Manager | Reverse proxy | nginx_proxy_manager_config | ❌ | bridge |
-| Portainer | Container management | (portal) | ❌ | bridge |
-| Media Server Stack | RAG + search | (stack_deployer) | ❌ | bridge |
+| Jellyfin | Media streaming (port 8096) | jellyfin, jellyfin_config, jellyctl | ✅ | bridge |
+| Bazarr | Subtitle management (port 6767) | (stack_deployer) | ❌ | bridge |
+| Pi-hole | DNS + ad-blocking (web 8081, DNS 53/80) | pihole_config, pihole_api | ❌ | bridge |
+| Dispatcharr | IPTV/VOD platform (port 9191) | dispatcharr | ✅ | bridge |
+| RetroArch | Emulation via KasmVNC (port 3000) | retroarch | ✅ | bridge |
+| Audiobookshelf | Audiobook/ebook server (port 13378) | audiobookshelf | ❌ | bridge |
+| Ollama | Local LLM inference (port 11434) | (stack_deployer) | ✅ (shared) | bridge |
+| Open WebUI | LLM chat frontend | (stack_deployer) | ❌ | bridge, public via `chat.chadbartel.duckdns.org` |
+| Tailscale | Mesh VPN, exit node + subnet router | tailscale | ❌ | native (host) |
+| Nginx Proxy Manager | Reverse proxy (admin port 81) | nginx_proxy_manager_config | ❌ | bridge |
+| Portainer | Container management (HTTPS 9443) | (main.yml direct) | ❌ | bridge |
+| koffan | Grocery/list app (custom) | koffan_config | ❌ | bridge |
+
+**Removed from architecture:** OpenVPN Access Server (superseded by native Tailscale, PR #36 `Feat/tailscale`).
 
 ## Getting Started
 
@@ -350,25 +390,37 @@ curl http://192.168.1.17:8096  # Jellyfin test
 - [[Home Lab Design]] — Single-node philosophy
 - [[NVIDIA GPU Acceleration]] — GPU sharing patterns
 
-## Open Questions
+## Open Questions — Resolved (as of 2026-08-14)
 
-- [Add monitoring/alerting (Prometheus + Grafana)?]
-- [Implement automated backup for Pi-hole configs?]
-- [Add Wireguard VPN (alternative to OpenVPN)?]
-- [Separate media storage pool into its own compose stack?]
+- **Wireguard VPN (alternative to OpenVPN)?** → Resolved differently: OpenVPN was removed entirely in favor of a native **Tailscale** role (exit node + subnet router mode). No Wireguard role exists.
+- **Separate media storage pool into its own compose stack?** → Not a separate stack, but storage is now clearly tiered: NVMe (`docker_data_device`) for `/var/lib/docker`, and two USB SSDs (`/mnt/ssd_media`, `/mnt/ssd_media2`) mounted by device ID for bulk media, shared across all service containers via `shared_storage_mounts`.
+
+## Open Questions — Still Open
+
+- [Add monitoring/alerting (Prometheus + Grafana)?] — Still not implemented; only Portainer's built-in stats and `docker logs`/`docker stats` are available.
+- [Implement automated backup for Pi-hole configs?] — Still no cron/scheduled backup. The `pihole_api` role exposes Teleporter export/import tasks, but nothing calls them on a schedule.
+- [Formalize `docs/` folder referenced in README (e.g. `docs/PIHOLE_RATE_LIMIT_INCIDENT.md`)?] — README links to it but no `docs/` directory currently exists in the repo; likely dropped or never committed.
+- [Add automated NFS backup for other stateful services beyond koffan?] — Only `koffan_config` currently supports an optional NFS backup path.
 
 ## Key Files
 
 - **Main Playbook:** [main.yml](main.yml)
 - **Inventory:** [inventory.yml](inventory.yml)
 - **Variables:** [vars.yml](vars.yml)
+- **Group Vars:** [group_vars/monolith.yml](group_vars/monolith.yml)
 - **Stack Deployer Role:** [roles/stack_deployer/tasks/main.yml](roles/stack_deployer/tasks/main.yml)
 - **Nginx Config Role:** [roles/nginx_proxy_manager_config/tasks/main.yml](roles/nginx_proxy_manager_config/tasks/main.yml)
 - **Pi-hole Config Role:** [roles/pihole_config/tasks/main.yml](roles/pihole_config/tasks/main.yml)
+- **Pi-hole API Role:** [roles/pihole_api/README.md](roles/pihole_api/README.md)
+- **Tailscale Role:** [roles/tailscale](roles/tailscale)
+- **Dispatcharr Role:** [roles/dispatcharr/README.md](roles/dispatcharr/README.md)
+- **RetroArch Role:** [roles/retroarch](roles/retroarch)
+- **Audiobookshelf Role:** [roles/audiobookshelf/README.md](roles/audiobookshelf/README.md)
 
 ## Sources
 
 - Wiki source: Project repository scan on 2026-08-07
+- Deep repository re-review on 2026-08-14 (roles, main.yml, vars, git log through PR #43)
 - README analysis from `/home/thatsmidnight/projects/Homelab-Ansible`
 - Copilot instructions from `.github/copilot-instructions.md` (comprehensive guidelines)
 - Docker Compose V2 documentation
