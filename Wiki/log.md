@@ -11,6 +11,20 @@ Append-only record of all wiki operations. Each entry is parseable with `grep "^
 
 Format: `## [YYYY-MM-DD HH:MM] operation | Title`
 
+## [2026-08-14 00:00] MANUAL-RESYNC | Homelab-Ansible Deep Review
+
+- **Type:** Manual deep re-review (requested resync of a single project, not the automated Phase 6 scanner)
+- **Source:** Full repository review of `/home/thatsmidnight/projects/Homelab-Ansible` — roles, `main.yml`, `vars.yml`/`group_vars/monolith.yml`, `README.md`, git log through PR #43
+- **Pages Updated:** entities/Homelab-Ansible, index.md
+- **Key findings:**
+  - OpenVPN removed from architecture, replaced by native Tailscale role (exit node + subnet router)
+  - New roles since last sync: `dispatcharr` (IPTV/VOD, GPU), `retroarch` (GPU emulation via KasmVNC), `audiobookshelf` (audiobooks), `tailscale` (native VPN), `pihole_api` (Pi-hole REST API v6.0, 80+ endpoints)
+  - New services added directly via `stack_deployer`: Bazarr (subtitles), Ollama + Open WebUI (local LLM)
+  - `main.yml` now split into explicit `bootstrap` and `deploy` phases
+  - Storage confirmed tiered: NVMe for Docker data, two USB SSDs (`/mnt/ssd_media`, `/mnt/ssd_media2`) for bulk media
+  - Two prior open questions resolved (VPN choice, storage tiering); Prometheus/Grafana monitoring and Pi-hole backup automation remain open
+- **Status:** ✓ COMPLETE
+
 ## [2026-08-12 19:26] AUTO-SYNC | Automated Wiki Monitoring
 
 - **Type:** Automated sync (Phase 6)
