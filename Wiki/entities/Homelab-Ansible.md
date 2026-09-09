@@ -1,7 +1,7 @@
 ---
 type: entity
 date_created: 2026-08-07
-date_updated: 2026-08-14
+date_updated: 2026-09-09
 tags:
   - wiki/entity
   - project/infrastructure
