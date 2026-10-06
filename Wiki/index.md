@@ -73,6 +73,7 @@ Cloud-native infrastructure patterns using AWS CDK, demonstrating hub-and-spoke 
 - [[Wiki/concepts/Lambda Authorizer Pattern]] — Custom authentication/authorization
 - [[Wiki/concepts/Static Site Deployment Pattern]] — S3 + CloudFront architecture
 - [[Wiki/concepts/API Gateway + Lambda Backend Pattern]] — Serverless backend infrastructure
+- [[Wiki/concepts/Idempotent Swarm Post-Deploy Configuration Pattern]] — Discover/wait/configure/validate pattern for Docker Swarm post-deploy setup
 
 ### 🛠️ Utilities & Learning Ecosystem (6 projects) — PHASE 4 COMPLETE ✓
 
@@ -140,7 +141,7 @@ Projects, tools, people, organizations. Your workspace entities.
 | chadbarteldotcom | [[Wiki/entities/chadbarteldotcom]] | AWS | active | 2026-08-07 |
 | thatsmidnightdotcom | [[Wiki/entities/thatsmidnightdotcom]] | AWS | active | 2026-08-07 |
 | Cartographers-Cloud-Kit | [[Wiki/entities/Cartographers-Cloud-Kit]] | AWS | in-progress | 2026-08-07 |
-| Homelab-Ansible | [[Wiki/entities/Homelab-Ansible]] | AWS | active | 2026-08-14 |
+| Homelab-Ansible | [[Wiki/entities/Homelab-Ansible]] | AWS | active | 2026-10-06 |
 ### Utilities & Learning Project Entities
 
 | Project | File | Ecosystem | Focus | Status | Updated |
@@ -202,6 +203,7 @@ Patterns, architectural insights, techniques, design decisions.
 | [[Wiki/concepts/Lambda Authorizer Pattern]] | high | 2026-08-07 |
 | [[Wiki/concepts/Static Site Deployment Pattern]] | high | 2026-08-07 |
 | [[Wiki/concepts/API Gateway + Lambda Backend Pattern]] | high | 2026-08-07 |
+| [[Wiki/concepts/Idempotent Swarm Post-Deploy Configuration Pattern]] | high | 2026-10-06 |
 ### Utilities & Learning Concepts (Phase 4)
 
 | Concept | Confidence | Updated |

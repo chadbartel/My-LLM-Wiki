@@ -11,6 +11,14 @@ Append-only record of all wiki operations. Each entry is parseable with `grep "^
 
 Format: `## [YYYY-MM-DD HH:MM] operation | Title`
 
+## [2026-10-06 00:00] MANUAL-REVIEW | Homelab-Ansible deep review & Swarm correction
+
+- **Type:** Manual systematic review (full source read of Homelab-Ansible repo)
+- **Correction:** Entity page previously claimed standalone Docker ("NOT Swarm"); verified via repo-wide grep that most services run under Docker Swarm (`docker stack deploy`, custom `docker_swarm_container_exec` module, 4 post-deploy roles targeting Swarm). `audiobookshelf` role confirmed as the one standalone-Compose exception.
+- **Pages Updated:** `entities/Homelab-Ansible` (Swarm correction, custom modules, operational playbooks, bash scripts/Makefile sections, key insights fix), `index.md` (dates, new concept link)
+- **Pages Created:** `concepts/Idempotent Swarm Post-Deploy Configuration Pattern`
+- **Status:** ✓ COMPLETE
+
 ## [2026-09-09 07:36] AUTO-SYNC | Automated Wiki Monitoring
 
 - **Type:** Automated sync (Phase 6)
