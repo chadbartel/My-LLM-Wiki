@@ -11,13 +11,21 @@ Append-only record of all wiki operations. Each entry is parseable with `grep "^
 
 Format: `## [YYYY-MM-DD HH:MM] operation | Title`
 
+## [2026-10-06 01:00] MANUAL-REVIEW | Homelab-Ansible Swarm correction reverted (v2) — standalone Docker confirmed
+
+- **Type:** Manual follow-up verification, correcting an earlier same-day correction
+- **Correction:** The prior "MANUAL-REVIEW" entry below incorrectly concluded the stack runs under Docker Swarm, based on role READMEs, variable names (`*_swarm_manager`), and module names (`docker_swarm_container_exec`) rather than actual task implementations. Direct review of the task bodies shows: `stack_deployer` role defaults to the `compose` backend (`community.docker.docker_compose_v2`, standalone), no task anywhere runs `docker swarm init`, `discover_container.yml` is explicitly commented `# standalone Docker` and uses plain `docker ps`, and the one genuinely Swarm-specific task (`tasks/common/set_swarm_manager.yml`) is dead/orphaned code never included in the live flow (`inventory.yml` has no `swarm_managers` group). Conclusion: this project runs standalone Docker Compose; "Swarm" naming throughout the codebase is vestigial, likely left over from an earlier multi-node Raspberry Pi Swarm design.
+- **Pages Updated:** `entities/Homelab-Ansible` (reverted Core Architecture/Single-Node Architecture/Key Insights/Tech Stack/Deployment Model/Custom Modules sections back to standalone-Docker framing, with notes on vestigial Swarm naming), `index.md` (renamed concept link)
+- **Pages Renamed:** `concepts/Idempotent Swarm Post-Deploy Configuration Pattern` → `concepts/Idempotent Standalone-Docker Post-Deploy Configuration Pattern` (content rewritten to match verified reality)
+- **Status:** ✓ COMPLETE
+
 ## [2026-10-06 00:00] MANUAL-REVIEW | Homelab-Ansible deep review & Swarm correction
 
 - **Type:** Manual systematic review (full source read of Homelab-Ansible repo)
 - **Correction:** Entity page previously claimed standalone Docker ("NOT Swarm"); verified via repo-wide grep that most services run under Docker Swarm (`docker stack deploy`, custom `docker_swarm_container_exec` module, 4 post-deploy roles targeting Swarm). `audiobookshelf` role confirmed as the one standalone-Compose exception.
 - **Pages Updated:** `entities/Homelab-Ansible` (Swarm correction, custom modules, operational playbooks, bash scripts/Makefile sections, key insights fix), `index.md` (dates, new concept link)
 - **Pages Created:** `concepts/Idempotent Swarm Post-Deploy Configuration Pattern`
-- **Status:** ✓ COMPLETE
+- **Status:** ✓ COMPLETE — **superseded by the 01:00 entry above; this entry's conclusion was wrong**
 
 ## [2026-09-09 07:36] AUTO-SYNC | Automated Wiki Monitoring
 

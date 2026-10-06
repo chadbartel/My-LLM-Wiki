@@ -40,7 +40,15 @@ Since the last deep review (2026-08-07), the repo has grown substantially — re
 
 ## Core Architecture
 
-> **CORRECTION (2026-10-06):** Verified by direct source review (`grep` across the full repo) — most of the stack runs under **Docker Swarm**, not standalone Docker as earlier versions of this page claimed. Evidence: `main.yml`/`stack_deployer` deploy via `docker stack deploy`; a custom module `library/docker_swarm_container_exec.py` execs into Swarm-managed containers; and four post-deploy roles (`jellyfin_config`, `pihole_config`, `nginx_proxy_manager_config`, `koffan_config`) explicitly auto-discover their target container **in Docker Swarm** (`tasks/common/set_swarm_manager.yml`, `tasks/common/wait_for_swarm_service.yml`). The README itself describes the project as "Docker, Docker Swarm, Portainer, and various services." **Exception:** the `audiobookshelf` role is explicitly documented as pure standalone Compose with "No Swarm dependencies." The sections below are retained for history but should be read with this correction in mind.
+> **CORRECTION v2 (2026-10-06):** The 2026-10-06 correction below (claiming most services run under Docker Swarm) was **wrong** — it was based on role READMEs, variable names (`*_swarm_manager`), and module names (`docker_swarm_container_exec`), not on the actual task implementations. Direct verification of the live execution path shows:
+> - `main.yml` → `tasks/deploy_stacks.yml` → `stack_deployer` role with `stack_deployer_backend: "{{ deployment_backend | default('compose') }}"` — **default backend is `compose`**, which runs [roles/stack_deployer/tasks/compose.yml](Homelab-Ansible/roles/stack_deployer/tasks/compose.yml) using `community.docker.docker_compose_v2` (plain standalone Compose). The `direct` backend (`docker stack deploy`, genuinely Swarm-only) exists in the role but is not selected anywhere in `vars.yml`/`group_vars`.
+> - **No task anywhere in the repo runs `docker swarm init`** — Swarm mode is never activated on the host, so `docker stack deploy` would fail ("this node is not a swarm manager") if that backend were ever selected.
+> - `roles/jellyfin_config/tasks/discover_container.yml` is explicitly commented `# standalone Docker` and runs plain `docker ps --filter name=^jellyfin$` — directly contradicting its own role README's claim of "Automatic Container Discovery: Finds Jellyfin containers in Swarm cluster."
+> - `docker_swarm_container_exec`'s own module docstring says it executes commands in containers "(standalone or Swarm)" — it's just `docker exec` + `creates`/`removes` idempotency, agnostic to Swarm.
+> - `tasks/common/wait_for_swarm_service.yml` is a generic TCP/HTTP `wait_for` poll with no Swarm-specific logic despite the name.
+> - `tasks/common/set_swarm_manager.yml` (the one task that *is* genuinely Swarm-specific — it reads `groups['swarm_managers'][0]`) is **dead code**: `inventory.yml` defines no `swarm_managers` group, and grep confirms this task is never `include_tasks`'d anywhere in the live flow, only referenced in its own README example.
+>
+> **Conclusion:** This project runs **standalone Docker Compose**, full stop. The pervasive "Swarm" naming in variables (`*_swarm_manager`), the custom module name, role READMEs, and task comments are vestigial — almost certainly carried over from an earlier multi-node Raspberry Pi Swarm cluster design (one orphaned comment references avoiding hardcoding a node name `"pi4_01"` that appears nowhere else in this repo) that was ported to this single-host "monolith" design without fully renaming things. Treat any `*_swarm*` identifier in this codebase as legacy naming on standalone-Docker-compatible logic, not as evidence of an active Swarm deployment.
 
 **Three-Layer Architecture:**
 ```
@@ -51,10 +59,9 @@ Docker Compose Configuration (templated .yml.j2)
     ├─ Application Services (Portainer, Nginx Proxy Manager)
     └─ Monitoring Services (optional)
     ↓
-Docker Swarm (single-node swarm; `docker stack deploy` / Portainer Swarm API)
-    ├─ homelab-bridge overlay/bridge network
+Docker Engine, standalone (Swarm mode never initialized; `community.docker.docker_compose_v2` per stack)
+    ├─ homelab-bridge bridge network
     └─ Services with persistent storage
-    │  (exception: audiobookshelf runs as plain standalone Compose, no Swarm)
     ↓
 Host Storage
     ├─ Local NVMe (OS, container state)
@@ -62,8 +69,8 @@ Host Storage
 ```
 
 **Why This Design:**
-- Single-node Swarm (no multi-node cluster complexity, but still gets Swarm's service reconciliation/restart semantics)
-- Docker Compose V2 syntax, translated to Swarm stacks by `stack_deployer`
+- Single-node orchestration (no cluster complexity, no Swarm overhead)
+- Docker Compose V2 (modern, industry standard), deployed via the `stack_deployer` role's `compose` backend
 - Ansible (agentless, idempotent)
 - GPU acceleration via NVIDIA container toolkit
 - Persistent storage via local mounts + UUID-based fstab
@@ -85,7 +92,7 @@ Host Storage
 ## Tech Stack
 
 - **Orchestration:** Ansible 2.10+
-- **Container Runtime:** Docker Engine (standalone, not Swarm)
+- **Container Runtime:** Docker Engine, standalone (Swarm mode never initialized on the host — see Core Architecture correction)
 - **Compose:** Docker Compose V2 (space-separated command)
 - **Host OS:** Ubuntu (NVIDIA driver 550 series referenced, Ubuntu 24.04-compatible)
 - **Server IP:** 192.168.1.17 ("monolith")
@@ -156,13 +163,14 @@ homelab-ansible/
 
 ## Single-Node Architecture
 
-**Single-Node, But Swarm-Mode (see correction above):**
-- ✅ Docker Swarm initialized on the one host (`manager_node_ip`); the stack is deployed via `docker stack deploy` / Portainer's Swarm API, not plain `docker compose up`
-- ✅ No additional manager/worker nodes — it's a one-node Swarm, so none of Swarm's multi-node scheduling/HA benefits apply, just the stack-management API surface
-- ✅ `homelab-bridge` Docker network for service-to-service traffic
-- ✅ Post-deploy roles use `docker_swarm_container_exec` (custom module) for idempotent `docker exec` into Swarm-managed containers
-- ❌ No multi-node placement constraints or node labels in use
-- ⚠️ `audiobookshelf` is the one role that deliberately opts out of Swarm and runs plain standalone Compose
+**NOT a Cluster (see correction v2 above):**
+- ❌ No Swarm mode — never initialized (`docker swarm init` does not appear anywhere in the repo)
+- ❌ No manager/worker nodes
+- ❌ No overlay networks
+- ❌ No service placement constraints
+- ✅ Standalone Docker Engine; stacks deployed via `community.docker.docker_compose_v2` (`stack_deployer` role, `compose` backend — the default)
+- ✅ `homelab-bridge` Docker bridge network for service-to-service traffic
+- ⚠️ `docker_swarm_container_exec`, `*_swarm_manager` variables, and "Docker Swarm environments" language in role READMEs are vestigial naming on standalone-Docker-compatible logic (confirmed by reading task bodies, e.g. `discover_container.yml` is commented `# standalone Docker` and uses plain `docker ps`)
 
 **All Services on One Host (192.168.1.17):**
 - Container-to-container via container names on bridge network (`homelab-bridge`)
@@ -284,7 +292,7 @@ ansible-playbook main.yml -i inventory.yml --ask-vault-pass
 **What It Does:**
 1. Read all variables from vars.yml / vault.yml
 2. `--tags bootstrap`: system prep, Docker/NVIDIA install, Tailscale, storage mounts (no containers started)
-3. `--tags deploy`: create `homelab-bridge` network, deploy Portainer, Dispatcharr, then all remaining stacks via `stack_deployer` — which runs `docker stack deploy` (direct backend, default) or the Portainer Swarm API, **not** plain `docker compose up -d`
+3. `--tags deploy`: create `homelab-bridge` network, deploy Portainer, Dispatcharr, then all remaining stacks via `stack_deployer` — default backend is `compose`, which runs `community.docker.docker_compose_v2` (verified: **not** `docker stack deploy`; Swarm mode is never initialized on the host)
 4. Run post-deploy tasks (`tasks/post_setup_*.yml`, each delegating to the matching `*_config` role) to finish setup wizards and API configuration
 5. Idempotent: Safe to run multiple times; post-deploy roles check existing state before re-applying
 
@@ -297,7 +305,7 @@ ansible-playbook main.yml -i inventory.yml --ask-vault-pass
 
 Three custom modules live under `roles/*/library/` or the top-level `library/`, built because no stock Ansible module fit the need:
 
-- **`docker_swarm_container_exec`** ([library/docker_swarm_container_exec.py](Homelab-Ansible/library/docker_swarm_container_exec.py)) — Runs a shell command inside a Swarm-managed container via `docker exec`, with Ansible-style `creates`/`removes` idempotency guards (stock `docker_container_exec`/`shell` modules don't support this for containerized commands). Used heavily by `pihole_config` (adlists, custom DNS, dnsmasq tasks).
+- **`docker_swarm_container_exec`** ([library/docker_swarm_container_exec.py](Homelab-Ansible/library/docker_swarm_container_exec.py)) — Despite the name, its own docstring says it works for "standalone or Swarm" containers. Runs a shell command inside a container via `docker exec`, with Ansible-style `creates`/`removes` idempotency guards (stock `docker_container_exec`/`shell` modules don't support this). Used heavily by `pihole_config` (adlists, custom DNS, dnsmasq tasks) against plain standalone containers in this repo.
 - **`jellyfin_api`** (in the `jellyfin` role) — Generic Jellyfin API v10.11.6 client: takes `endpoint`/`method`/`query_params`/`body` and handles both API-token and username/password auth, avoiding manual JSON construction in tasks.
 - **`pihole_api`** (in the `pihole_api` role) — Full Pi-hole REST API v6.0 client covering 80+ endpoints (auth/session, config, domains, clients, groups, lists, DHCP, Teleporter backup/restore, gravity updates) with automatic session/auth reuse.
 
@@ -307,8 +315,8 @@ Standalone playbooks under `playbooks/`, run independently of `main.yml`, for di
 
 | Playbook | Purpose |
 |----------|---------|
-| `playbooks/debug.yml` | Diagnostics: Docker version, service status, **Swarm status**, running containers, host info |
-| `playbooks/destroy.yml` | ⚠️ Full teardown of the Docker Swarm configuration and deployed stacks — gated behind typing the literal confirmation phrase `NUCLEAR_ANNIHILATION` |
+| `playbooks/debug.yml` | Diagnostics: Docker version, service status, Swarm status check (expected to report inactive — Swarm is never initialized, see Core Architecture correction), running containers, host info |
+| `playbooks/destroy.yml` | ⚠️ Full teardown of the deployed stacks/containers — gated behind typing the literal confirmation phrase `NUCLEAR_ANNIHILATION` (its own messaging references "Swarm configuration" but there is no Swarm to tear down in practice) |
 | `playbooks/prepare_ssd_media.yml` | Mounts/prepares the USB SSD media drives without running a full deployment |
 | `playbooks/test-ssh.yml` | Verifies SSH connectivity to all inventory hosts before a real run |
 
@@ -320,7 +328,7 @@ Standalone playbooks under `playbooks/`, run independently of `main.yml`, for di
 - **`ansible-wrapper.sh`** — Sources the saved SSH agent info and verifies keys are loaded before any `ansible-playbook` call, avoiding silent permission-denied failures.
 - **`troubleshoot-ssh.sh`** — Diagnoses SSH agent/key/connectivity problems per host.
 - **`validate.sh`** — Pre-deployment sanity check: confirms core files (`main.yml`, `ansible.cfg`, `vars.yml`, `vault.yml`, `inventory.yml`, `requirements.yml`) and expected directories/task/template files all exist.
-- **`fix-docker-socket.sh`** — Repairs Docker socket permission/connectivity issues, including restarting affected Swarm services.
+- **`fix-docker-socket.sh`** — Repairs Docker socket permission/connectivity issues, including restarting affected containers/services (its comment mentions "Swarm services" but none run under Swarm here).
 
 Typical `Makefile` targets: `make setup-ssh`, `make deploy`, `make deploy-roles`, `make debug`, `make test`, `make teardown-swarm`, `make destroy`, `make validate`, `make lint`.
 
@@ -400,10 +408,10 @@ curl http://192.168.1.17:8096  # Jellyfin test
 ## Key Insights
 
 **Single-Node Philosophy:**
-- Single-node Swarm, not a standalone-vs-Swarm choice (see correction in Core Architecture) — one node means no raft consensus overhead across multiple managers, but the stack still gets Swarm's service reconciliation and restart semantics
+- Simpler than Swarm (no raft consensus, no leader election) — confirmed true: Swarm mode is never initialized on this host, so none of its machinery is in play
 - Powerful single machine (Ryzen 9 5900XT, 16GB RAM)
 - Idempotent Ansible (safe to re-apply)
-- Media services don't need multi-node clustering
+- Media services don't need clustering
 
 **Ansible Strengths:**
 - Agentless (no daemons on host)
@@ -423,7 +431,7 @@ curl http://192.168.1.17:8096  # Jellyfin test
 - [[Docker-Based Infrastructure]] — Container orchestration patterns
 - [[Home Lab Design]] — Single-node philosophy
 - [[NVIDIA GPU Acceleration]] — GPU sharing patterns
-- [[Wiki/concepts/Idempotent Swarm Post-Deploy Configuration Pattern]] — Discover-wait-configure-validate pattern used by jellyfin_config, pihole_config, nginx_proxy_manager_config, koffan_config
+- [[Wiki/concepts/Idempotent Standalone-Docker Post-Deploy Configuration Pattern]] — Discover-wait-configure-validate pattern used by jellyfin_config, pihole_config, nginx_proxy_manager_config, koffan_config (despite "Swarm"-named variables/modules, confirmed to run against standalone containers)
 
 ## Open Questions — Resolved (as of 2026-08-14)
 
@@ -456,7 +464,8 @@ curl http://192.168.1.17:8096  # Jellyfin test
 
 - Wiki source: Project repository scan on 2026-08-07
 - Deep repository re-review on 2026-08-14 (roles, main.yml, vars, git log through PR #43)
-- Full systematic repo review on 2026-10-06: every role, task file, playbook, custom module, template, and bash script read directly; corrected the Docker Swarm vs. standalone contradiction via `grep` verification across the full source tree
+- Full systematic repo review on 2026-10-06: every role, task file, playbook, custom module, template, and bash script read directly
+- Follow-up verification on 2026-10-06 (same day, v2): re-checked the Swarm claim by reading actual task bodies (not just READMEs/variable names) and confirmed the project runs standalone Docker Compose — `stack_deployer`'s default `compose` backend, no `docker swarm init` anywhere, `discover_container.yml` explicitly commented "standalone Docker", and the one genuinely Swarm-specific task (`set_swarm_manager.yml`) is dead/unused code
 - README analysis from `/home/thatsmidnight/projects/Homelab-Ansible`
 - Copilot instructions from `.github/copilot-instructions.md` (comprehensive guidelines)
 - Docker Compose V2 documentation

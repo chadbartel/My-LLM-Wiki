@@ -73,7 +73,7 @@ Cloud-native infrastructure patterns using AWS CDK, demonstrating hub-and-spoke 
 - [[Wiki/concepts/Lambda Authorizer Pattern]] — Custom authentication/authorization
 - [[Wiki/concepts/Static Site Deployment Pattern]] — S3 + CloudFront architecture
 - [[Wiki/concepts/API Gateway + Lambda Backend Pattern]] — Serverless backend infrastructure
-- [[Wiki/concepts/Idempotent Swarm Post-Deploy Configuration Pattern]] — Discover/wait/configure/validate pattern for Docker Swarm post-deploy setup
+- [[Wiki/concepts/Idempotent Standalone-Docker Post-Deploy Configuration Pattern]] — Discover/wait/configure/validate pattern for standalone-Docker post-deploy setup
 
 ### 🛠️ Utilities & Learning Ecosystem (6 projects) — PHASE 4 COMPLETE ✓
 
@@ -203,7 +203,7 @@ Patterns, architectural insights, techniques, design decisions.
 | [[Wiki/concepts/Lambda Authorizer Pattern]] | high | 2026-08-07 |
 | [[Wiki/concepts/Static Site Deployment Pattern]] | high | 2026-08-07 |
 | [[Wiki/concepts/API Gateway + Lambda Backend Pattern]] | high | 2026-08-07 |
-| [[Wiki/concepts/Idempotent Swarm Post-Deploy Configuration Pattern]] | high | 2026-10-06 |
+| [[Wiki/concepts/Idempotent Standalone-Docker Post-Deploy Configuration Pattern]] | high | 2026-10-06 |
 ### Utilities & Learning Concepts (Phase 4)
 
 | Concept | Confidence | Updated |
