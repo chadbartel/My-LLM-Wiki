@@ -404,6 +404,7 @@ curl http://192.168.1.17:8096  # Jellyfin test
 - Container crash loops → Check logs: `docker logs container-name`
 - No internet from container → Verify bridge network DNS
 - GPU not available → Check nvidia-container-toolkit installation
+- `nvidia-persistenced` fails to start, or GPU containers fail with `libEGL_nvidia.so.<version>: no such file or directory` after a driver apt upgrade → see [[NVIDIA Driver-Container Version Skew Pattern]] (kernel module reload, ldconfig refresh, Docker daemon restart, and removing already-created containers with stale baked-in mounts are all required, not just one)
 
 ## Key Insights
 
@@ -431,6 +432,7 @@ curl http://192.168.1.17:8096  # Jellyfin test
 - [[Docker-Based Infrastructure]] — Container orchestration patterns
 - [[Home Lab Design]] — Single-node philosophy
 - [[NVIDIA GPU Acceleration]] — GPU sharing patterns
+- [[NVIDIA Driver-Container Version Skew Pattern]] — Driver-upgrade/kernel-module/Docker-cache/stale-container failure chain and verified fix, discovered debugging `nvidia-persistenced` and Dispatcharr GPU container startup
 - [[Wiki/concepts/Idempotent Standalone-Docker Post-Deploy Configuration Pattern]] — Discover-wait-configure-validate pattern used by jellyfin_config, pihole_config, nginx_proxy_manager_config, koffan_config (despite "Swarm"-named variables/modules, confirmed to run against standalone containers)
 
 ## Open Questions — Resolved (as of 2026-08-14)
