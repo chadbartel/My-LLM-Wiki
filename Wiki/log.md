@@ -11,6 +11,13 @@ Append-only record of all wiki operations. Each entry is parseable with `grep "^
 
 Format: `## [YYYY-MM-DD HH:MM] operation | Title`
 
+## [2026-10-06 18:25] MANUAL-REVIEW | Homelab-Ansible NVIDIA transcoding verified + known healthcheck issue logged
+
+- **Type:** Manual follow-up (live SSH verification of the previous session's fix, plus a known-issue callout)
+- **Summary:** Verified over SSH that NVIDIA hardware transcoding works end-to-end after the driver/container fixes: Jellyfin shows real `-hwaccel cuda`/`h264_nvenc` transcode sessions exiting cleanly, and Dispatcharr's own startup GPU self-check reports full NVIDIA Container Toolkit/device/FFmpeg CUDA availability. Also found `dispatcharr-web` reporting `(unhealthy)` in `docker ps` — root-caused to a pre-existing, unrelated bug where the healthcheck's Python script is mangled by a YAML folded scalar (`>`) in `templates/dispatcharr-compose.yml.j2`, causing an `IndentationError` on every probe. Confirmed the container itself works fully; user explicitly chose to leave this cosmetic bug unfixed rather than spend time on it.
+- **Pages Updated:** `concepts/NVIDIA Driver-Container Version Skew Pattern` (added post-fix verification + known-issue section), `entities/Homelab-Ansible` (Troubleshooting section note to ignore the `dispatcharr-web` unhealthy status)
+- **Status:** ✓ COMPLETE
+
 ## [2026-10-06 17:40] MANUAL-REVIEW | Homelab-Ansible NVIDIA driver/container debugging session captured
 
 - **Type:** Manual work capture (live debugging session, verified fixes against the real `monolith` host via SSH)

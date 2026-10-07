@@ -405,6 +405,7 @@ curl http://192.168.1.17:8096  # Jellyfin test
 - No internet from container → Verify bridge network DNS
 - GPU not available → Check nvidia-container-toolkit installation
 - `nvidia-persistenced` fails to start, or GPU containers fail with `libEGL_nvidia.so.<version>: no such file or directory` after a driver apt upgrade → see [[NVIDIA Driver-Container Version Skew Pattern]] (kernel module reload, ldconfig refresh, Docker daemon restart, and removing already-created containers with stale baked-in mounts are all required, not just one)
+- `dispatcharr-web` shows `(unhealthy)` in `docker ps` → **known cosmetic issue, ignore.** The healthcheck's Python script is mangled by a YAML folded scalar (`>`) in `templates/dispatcharr-compose.yml.j2`, causing an `IndentationError` on every health probe run. The container itself (API, GPU transcoding) works fine — only the reported health status is wrong. Deliberately left unfixed as low priority.
 
 ## Key Insights
 
