@@ -74,6 +74,7 @@ Cloud-native infrastructure patterns using AWS CDK, demonstrating hub-and-spoke 
 - [[Wiki/concepts/Static Site Deployment Pattern]] — S3 + CloudFront architecture
 - [[Wiki/concepts/API Gateway + Lambda Backend Pattern]] — Serverless backend infrastructure
 - [[Wiki/concepts/Idempotent Standalone-Docker Post-Deploy Configuration Pattern]] — Discover/wait/configure/validate pattern for standalone-Docker post-deploy setup
+- [[Wiki/concepts/NVIDIA Driver-Container Version Skew Pattern]] — Driver-upgrade failure chain across kernel module, ld cache, Docker daemon cache, and stale created containers
 
 ### 🛠️ Utilities & Learning Ecosystem (6 projects) — PHASE 4 COMPLETE ✓
 
@@ -204,6 +205,7 @@ Patterns, architectural insights, techniques, design decisions.
 | [[Wiki/concepts/Static Site Deployment Pattern]] | high | 2026-08-07 |
 | [[Wiki/concepts/API Gateway + Lambda Backend Pattern]] | high | 2026-08-07 |
 | [[Wiki/concepts/Idempotent Standalone-Docker Post-Deploy Configuration Pattern]] | high | 2026-10-06 |
+| [[Wiki/concepts/NVIDIA Driver-Container Version Skew Pattern]] | high | 2026-10-06 |
 ### Utilities & Learning Concepts (Phase 4)
 
 | Concept | Confidence | Updated |

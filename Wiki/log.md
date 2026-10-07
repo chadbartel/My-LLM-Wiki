@@ -11,6 +11,14 @@ Append-only record of all wiki operations. Each entry is parseable with `grep "^
 
 Format: `## [YYYY-MM-DD HH:MM] operation | Title`
 
+## [2026-10-06 17:40] MANUAL-REVIEW | Homelab-Ansible NVIDIA driver/container debugging session captured
+
+- **Type:** Manual work capture (live debugging session, verified fixes against the real `monolith` host via SSH)
+- **Summary:** Debugged a chain of NVIDIA GPU failures on `monolith` after a driver package upgrade: `nvidia-persistenced` failing to start (missing kernel headers/DKMS build, missing `/dev/nvidia*` device nodes on a headless host, missing `nvidia-modprobe` binary), then a deeper stale-kernel-module-vs-userspace-library version mismatch (`NVRM: API mismatch`, `NVML: Driver/library version mismatch`), then Dispatcharr GPU containers failing with `libEGL_nvidia.so.<old-version>: no such file or directory` even after the module was fixed — root-caused to a stale `/etc/ld.so.cache`, a long-running Docker daemon caching GPU device state from before the driver change, and already-created containers with bad mount lists baked in at creation time that a config-hash-only recreate policy never retries. All root causes were confirmed live via SSH (dmesg, dkms status, ldconfig, docker daemon uptime) before implementing fixes in `Homelab-Ansible` (`tasks/initial_setup.yml`, `roles/dispatcharr/tasks/main.yml`), then verified end-to-end with a real `ansible-playbook` run.
+- **Pages Created:** `concepts/NVIDIA Driver-Container Version Skew Pattern`
+- **Pages Updated:** `entities/Homelab-Ansible` (Troubleshooting section, Related Concepts link)
+- **Status:** ✓ COMPLETE
+
 ## [2026-10-06 01:00] MANUAL-REVIEW | Homelab-Ansible Swarm correction reverted (v2) — standalone Docker confirmed
 
 - **Type:** Manual follow-up verification, correcting an earlier same-day correction
