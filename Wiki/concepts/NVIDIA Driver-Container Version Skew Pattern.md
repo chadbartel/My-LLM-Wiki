@@ -46,3 +46,14 @@ A chain of failure modes that occurs when NVIDIA driver packages are upgraded (v
 
 - [[Homelab-Ansible]] — where this was discovered and fixed (`tasks/initial_setup.yml`, `roles/dispatcharr/tasks/main.yml`)
 - [[Idempotent Standalone-Docker Post-Deploy Configuration Pattern]] — sibling pattern for discover-wait-configure-validate idempotency on this same host
+
+## Post-fix verification (2026-10-06)
+
+Confirmed live over SSH after the fix deployed cleanly end-to-end:
+
+- Jellyfin: `/dev/nvidia*` bind-mounted into the container, `jellyfin-ffmpeg -encoders` lists `h264_nvenc`/`hevc_nvenc`/`av1_nvenc`, and real playback sessions in the container logs show `-init_hw_device cuda=cu:0 -hwaccel cuda ... -codec:v:0 h264_nvenc` with clean `FFmpeg exited with code 0` completions.
+- Dispatcharr: its own startup GPU self-check reports NVIDIA Container Toolkit detected, all 5/5 NVIDIA devices accessible, and `FFmpeg NVIDIA acceleration: AVAILABLE (cuda)`.
+
+## Known non-issue: `dispatcharr-web` healthcheck is cosmetically "unhealthy"
+
+`docker ps` shows `dispatcharr-web` as `(unhealthy)`. This is **unrelated** to this pattern and to GPU/transcoding — it's a pre-existing bug in [templates/dispatcharr-compose.yml.j2](Homelab-Ansible/templates/dispatcharr-compose.yml.j2) in [[Homelab-Ansible]]: the container's healthcheck Python script is wrapped in a YAML folded scalar (`>`), which collapses all newlines into spaces and destroys the script's required indentation, so the probe itself crashes with `IndentationError: unexpected indent` on every run. The container is otherwise fully functional (API, GPU access, transcoding all confirmed working); only the Docker-reported health status is wrong. Deliberately left unfixed (low priority, cosmetic only) — do not re-investigate this as a GPU/driver problem if seen again.
